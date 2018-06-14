@@ -1,0 +1,112 @@
+.fullHeight
+{
+	min-height: 100vh;
+	height:100vh;
+	max-height:100vh;
+}
+.loginForm
+{
+	height:100%;
+	padding:20%;
+}
+.alertBar_alertIcon
+{
+	padding-right:15px;
+}
+.alertBar_alert
+{
+	font-size:2em;
+}
+#alertBar_alerts
+{
+	background-color: red;
+	-webkit-animation-name: alertBarFlash; /* Safari 4.0 - 8.0 */
+	-webkit-animation-duration: 1s; /* Safari 4.0 - 8.0 */
+	-webkit-animation-iteration-count: infinite; /* Safari 4.0 - 8.0 */
+	animation-name: alertBarFlash;
+	animation-duration: 1s;
+	animation-iteration-count: infinite;
+	border-radius:30px;
+}
+#alertBar_alerts>li
+{
+	position: relative;
+    display: block;
+    float:left;
+    list-style: none;
+}
+#alertBar_alerts>li>a
+{
+	display:block;
+	line-height:20px;
+}
+/* Safari 4.0 - 8.0 */
+@-webkit-keyframes alertBarFlash {
+	0%   {background-color:red;}
+	50%  {background-color:white;}
+	100% {background-color:red;}
+}
+
+/* Standard syntax */
+@keyframes alertBarFlash {
+	0%   {background-color:red;}
+	50%  {background-color:white;}
+	100% {background-color:red;}
+}
+.panel-heading
+{
+	font-size:2em;
+	text-align:center;
+}
+.activationWell>a
+{
+	text-decoration:none;
+}
+.activationSignals
+{
+	display:none;
+}
+.activationWell:hover .activationSignals
+{
+	display:block;
+}
+.openClients_closed
+{
+	background-color:red;
+}
+.openClients_closed a
+{
+	color:black;
+}
+.openClients_closed:hover .openClients_list
+{
+	display:block;
+}
+.openClients_open
+{
+	background-color:green;
+}
+.openClients_open a
+{
+	color:black;
+}
+.openClients_open:hover .openClients_list
+{
+	display:block;
+}
+.openClients_list
+{
+	display:none;
+}
+.activationContent
+{
+	display:none;
+}
+.clientUsers_userNumber
+{
+	display:none;
+}
+.clientUsers:hover .clientUsers_userNumber
+{
+	display:block;
+}
