@@ -1,23 +1,23 @@
 stdClass Object
 (
-    [_id] => 467f4c5998d1c957a09b0971a0000eba
-    [_rev] => 33-b620e47fad3f31002106b2e0aac84ad3
+    [_id] => 2edf728c57ff3ebe6d7891e15e00250e
+    [_rev] => 41-552a6183653fe8475ac4ffd760b347e7
     [details] => Array
         (
-            [name] => Greensotone Center Management
-            [userType] => Administrator
+            [name] => Brendon Whelan
+            [userType] => User
             [contact] => Array
                 (
                     [email] => Array
                         (
-                            [detail] => 
+                            [detail] => brendon@integrated-za.com
                             [respond] => 
                         )
 
                     [mobile] => Array
                         (
-                            [detail] => 
-                            [respond] => 
+                            [detail] => 27729926919
+                            [respond] => 1
                         )
 
                     [landLine] => Array
@@ -31,49 +31,50 @@ stdClass Object
 
     [platform] => stdClass Object
         (
-            [allow] => 
+            [allow] => 1
+            [passwordChange] => false
             [security] => Array
                 (
                     [dashboard] => Array
                         (
-                            [enable] => 
-                            [activations] => 
-                            [onlineDevices] => 
-                            [openClients] => 
+                            [enable] => 1
+                            [activations] => 1
+                            [onlineDevices] => 1
+                            [openClients] => 1
                         )
 
                     [monitoring] => Array
                         (
-                            [enable] => 
-                            [signals] => 
-                            [activations] => 
+                            [enable] => 1
+                            [signals] => 1
+                            [activations] => 1
                         )
 
                     [clients] => Array
                         (
-                            [enable] => 
-                            [edit] => 
+                            [enable] => 1
+                            [edit] => 1
                             [activations] => Array
                                 (
-                                    [enable] => 
-                                    [edit] => 
-                                    [addResponseNotes] => 
-                                    [editResponseNotes] => 
-                                    [removeResponseNotes] => 
+                                    [enable] => 1
+                                    [edit] => 1
+                                    [addResponseNotes] => 1
+                                    [editResponseNotes] => 1
+                                    [removeResponseNotes] => 1
                                 )
 
                         )
 
                     [users] => Array
                         (
-                            [enable] => 
-                            [edit] => 
-                            [editPlatform] => 
+                            [enable] => 1
+                            [edit] => 1
+                            [editPlatform] => 1
                         )
 
                     [reports] => Array
                         (
-                            [enable] => 
+                            [enable] => 1
                         )
 
                 )

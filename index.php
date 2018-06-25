@@ -1466,7 +1466,14 @@ error_reporting(E_ALL);
 																								currentContact.innerHTML = `<h4 style="text-align:center">${currentUser.details.name}</h4>`;
 																								currentContact.innerHTML += `+${userMobile.substr(0,2)} (0)${userMobile.substr(2,2)} ${userMobile.substr(4,3)} ${userMobile.substr(7,4)}<br>`;
 																								currentContact.innerHTML += `User Type: ${currentUser.details.userType}<br>`;
-																								currentContact.innerHTML += `<button onclick="verifyPassword(${activationID},addResponseNote(${activationID},'Contacted ${currentUser.details.name}'));" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
+																								if(currentUser.details.userType == "User")
+																								{
+																									currentContact.innerHTML += `<button onclick="verifyPassword(${activationID},addResponseNote(${activationID},'Contacted ${currentUser.details.name}'));" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
+																								}
+																								else
+																								{
+																									currentContact.innerHTML += `<button onclick="addResponseNote(${activationID},'Contacted ${currentUser.details.name}');" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
+																								}
 																								contactsColumn.appendChild(currentContact);
 																							}
 																						}
@@ -1497,7 +1504,14 @@ error_reporting(E_ALL);
 																									currentContact.innerHTML = `<h4 style="text-align:center">${currentUser.details.name}</h4>`;
 																									currentContact.innerHTML += `+${userMobile.substr(0,2)} (0)${userMobile.substr(2,2)} ${userMobile.substr(4,3)} ${userMobile.substr(7,4)}<br>`;
 																									currentContact.innerHTML += `User Type: ${currentUser.details.userType}<br>`;
+																									if(currentUser.details.userType == "User")
+																								{
 																									currentContact.innerHTML += `<button onclick="verifyPassword(${activationID},addResponseNote(${activationID},'Contacted ${currentUser.details.name}'));" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
+																								}
+																								else
+																								{
+																									currentContact.innerHTML += `<button onclick="addResponseNote(${activationID},'Contacted ${currentUser.details.name}');" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
+																								}
 																									contactsColumn.appendChild(currentContact);
 																								}
 																							}
