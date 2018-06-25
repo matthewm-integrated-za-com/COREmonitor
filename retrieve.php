@@ -21,6 +21,8 @@ error_reporting(!E_ALL);
 		$clientsClient = new CouchClient($couchDsn,$clientsDB);
 		$clickatellURL = "https://platform.clickatell.com/messages/http/send?apiKey=XGbb0jE3SD2rHwa4uh5OCQ%3D%3D";
 		$return = new stdClass();
+		$minTimeBuffer = 120 ; //Time in minutes to pull signals for, Improves speed performance of this script
+		$minTime = $now - ($minTimeBuffer * 60);
 	}
 	//get action plans and response plans
 	{
@@ -103,13 +105,16 @@ error_reporting(!E_ALL);
 		}
 		function getSignals()
 		{
-			global $return, $signalsClient;
+			global $return, $signalsClient, $minTime;
 			$allSignals = $signalsClient -> getAllDocs();
 			foreach($allSignals -> rows as $currentRow)
 			{
 				$signalID = $currentRow -> id;
-				$currentSignal = $signalsClient -> getDoc($signalID);
-				$return -> retrieved -> signals[$signalID] = $currentSignal;
+				if(floatval($signalID) >= $minTime)
+				{
+					$currentSignal = $signalsClient -> getDoc($signalID);
+					$return -> retrieved -> signals[$signalID] = $currentSignal;
+				}
 			}
 		}
 		function getUsers()

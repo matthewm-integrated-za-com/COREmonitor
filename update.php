@@ -60,6 +60,18 @@ error_reporting(!E_ALL);
 						{
 							updateClientUsers();
 						}
+						elseif($_POST["what"] == "contact")
+						{
+							updateClientContact();
+						}
+						elseif($_POST["what"] == "zones")
+						{
+							updateClientZones();
+						}
+						elseif($_POST["what"] == "testMode")
+						{
+							updateClientTestMode();
+						}
 						else
 						{
 							$return -> error = "ERROR: invalid Request";
@@ -113,6 +125,11 @@ error_reporting(!E_ALL);
 										{
 											$client -> activations -> $actionPlan -> $activationID -> isActive = false;
 											$return -> retrieved -> activationCompleted = $activationID;
+											if($actionPlan == "Test Mode")
+											{
+												$client -> testModeActive = false;
+												unset($client -> testModeExpiry);
+											}
 										}
 									}
 								}
@@ -199,8 +216,172 @@ store($user);
 			{
 				$client -> users = $clientData["assignedUsers"];
 			}
-store($client);
 			$clientsClient -> storeDoc($client);
+		}
+		function updateClientContact()
+		{
+			global $return, $clientsClient;
+			$clientData = $_POST["data"];
+			$clientID = $clientData["clientID"];
+			$client = $clientsClient -> getDoc($clientID);
+			$contactDetails = $clientData["contact"];
+			$client -> clientName = $contactDetails["clientName"];
+			$client -> address = $contactDetails["address"];
+			$client -> passwords = $contactDetails["passwords"];
+			$clientsClient -> storeDoc($client);
+		}
+		function updateClientZones()
+		{
+			global $return, $clientsClient;
+			$clientData = $_POST["data"];
+			$client = $clientsClient -> getDoc($clientData["clientID"]);
+			$submittedZones = $clientData["zones"];
+			$newZones = array();
+			foreach($submittedZones as $currentZone)
+			{
+				$zoneNumber = $currentZone["zoneNumber"];
+				$zoneIndex = str_pad($zoneNumber, 2, '0', STR_PAD_LEFT);
+				$newZones[$zoneIndex]["zoneNumber"] = $zoneNumber;
+				$newZones[$zoneIndex]["zoneDescription"] = $currentZone["zoneDescription"];
+				$newZones[$zoneIndex]["assignedCameras"] = $currentZone["assignedCameras"];
+			}
+			$client -> zones = $newZones;
+			$clientsClient -> storeDoc($client);
+		}
+		function updateClientTestMode()
+		{
+			global $now, $return, $clientsClient, $configClient, $signalsClient;
+			$clientData = $_POST["data"];
+			$client = $clientsClient -> getDoc($clientData["clientID"]);
+			if($clientData["testModeActive"] == "true")
+			{
+				$client -> testModeActive = true;
+				$client -> testModeExpiry = intval(date('U')) + 900;
+				//load activation
+				{
+					$testMode = "Test Mode";
+					$client -> activations -> $testMode -> $now -> activationID = $now;
+					$client -> activations -> $testMode -> $now -> isActive = true;
+					$client -> activations -> $testMode -> $now -> assignedSignals[] = $now;
+					$client -> activations -> $testMode -> $now -> dateTime = date('d/m/Y @ H:i:s',$now);
+				}
+				$return -> result = "enabled";
+				$clientsClient -> storeDoc($client);
+				//create Signal parameters
+				{
+					$signal = "System Generated";
+					$clientID = $clientData["clientID"];
+					$qualifier = 1;
+					$eventType = "607";
+					$partition = 1;
+					$zone_user = 0;
+				}
+			}
+			else
+			{
+				$client -> testModeActive = false;
+				unset($client -> testModeExpiry);
+				$return -> result = "disabled";
+				$testMode = "Test Mode";
+				foreach($client -> activations -> $testMode as $currentActivation)
+				{
+					$activationID = $currentActivation -> activationID;
+					if($currentActivation -> isActive)
+					{
+						$currentActivation -> isActive = false;
+						$currentActivations -> assignedSignals[] = $now;
+						$client -> activations -> $testMode -> $activationID = $currentActivation;
+					}
+				}
+				$clientsClient -> storeDoc($client);
+				//create Signal parameters
+				{
+					$signal = "System Generated";
+					$clientID = $clientData["clientID"];
+					$qualifier = 3;
+					$eventType = "607";
+					$partition = 1;
+					$zone_user = 0;
+				}
+			}
+			//store Activtion changes to DB
+			{
+				//test if signal should be created
+				{
+					$eventTypes = $configClient -> getDoc("eventTypes");
+					$interpereters = $eventTypes -> contactID -> eventTypes;
+					if(!is_null($interpereters -> $eventType))
+					{
+						if($interpereters -> $eventType -> dualSignal)
+						{
+							$createSignal = $interpereters -> $eventType -> dualSignalQualifiers -> $qualifier -> createSignal;
+							if($createSignal)
+							{
+								$eventName = $interpereters -> $eventType -> dualSignalQualifiers -> $qualifier -> name;
+								$createActivation = $interpereters -> $eventType -> dualSignalQualifiers -> $qualifier -> createActivation;
+								$assignedActionPlan = $interpereters -> $eventType -> dualSignalQualifiers -> $qualifier -> assignedActionPlan;
+							}
+						}
+						else
+						{
+							$createSignal = $interpereters -> $eventType -> createSignal;
+							if($createSignal)
+							{
+								$eventName = $interpereters -> $eventType -> name;
+								$createActivation = $interpereters -> $eventType -> createActivation;
+								$assignedActionPlan = $interpereters -> $eventType -> assignedActionPlan;
+							}
+						}
+					}
+					else
+					{
+						$createSignal = true;
+						$eventName = "Unknown Event Signal";
+						$createActivation = true;
+						$assignedActionPlan = "Configuration Error";
+					}
+					//store Data to Daabase
+					if($createSignal)
+					{
+						$signalID = strval($now);
+						$doc = new stdClass();
+						$doc -> _id = $signalID;
+						$doc -> timestamp = $now;
+						$doc -> dateTime = date('d/m/Y @ H:i:s',$now);
+						$doc -> convertedToActivation = false;
+						$doc -> rawData = $signal;
+						$doc -> signal -> clientID = $clientID;
+						$doc -> signal -> qualifier = $qualifier;
+						$doc -> signal -> eventType = $eventType;
+						$doc -> signal -> partition = $partition;
+						$doc -> signal -> zone_user = $zone_user;
+						$doc -> signal -> eventName = $eventName;
+						$doc -> signal -> createActivation = $createActivation;
+						$doc -> signal -> assignedActionPlan = $assignedActionPlan;
+						$doc -> signal -> fromIP = null;
+						$signalsClient -> storeDoc($doc);
+					}
+				}
+			}
+		}
+		function curl($host,$data)//Data to be put in the format $data = "Hello=World&John=Travolta&...=..."
+		{
+			// Generated by curl-to-PHP: http://incarnate.github.io/curl-to-php/
+			$ch = curl_init();
+			
+			curl_setopt($ch, CURLOPT_URL, $host);
+			if(!is_null($data))
+			{
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+			}
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($ch, CURLOPT_POST, 1);
+			
+			$result = curl_exec($ch);
+			if (curl_errno($ch)) {
+				echo 'Error:' . curl_error($ch);
+			}
+			curl_close ($ch);
 		}
 	}
 	function store($print)

@@ -110,3 +110,21 @@
 {
 	display:block;
 }
+#passwordVerificationModal
+{
+	background-color:#ffffff;
+	background-color:rgba(0,0,0,0.8);
+	cursor:not-allowed;
+}
+#passwordVerificationModal>div
+{
+	cursor:auto;
+}
+.signalMonitor-signalDetails
+{
+	display:none;
+}
+.signalMonitor-signal:hover .signalMonitor-signalDetails
+{
+	display:block;
+}

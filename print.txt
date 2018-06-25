@@ -1,1 +1,83 @@
-Next ID is 0008
+stdClass Object
+(
+    [_id] => 467f4c5998d1c957a09b0971a0000eba
+    [_rev] => 33-b620e47fad3f31002106b2e0aac84ad3
+    [details] => Array
+        (
+            [name] => Greensotone Center Management
+            [userType] => Administrator
+            [contact] => Array
+                (
+                    [email] => Array
+                        (
+                            [detail] => 
+                            [respond] => 
+                        )
+
+                    [mobile] => Array
+                        (
+                            [detail] => 
+                            [respond] => 
+                        )
+
+                    [landLine] => Array
+                        (
+                            [detail] => 
+                        )
+
+                )
+
+        )
+
+    [platform] => stdClass Object
+        (
+            [allow] => 
+            [security] => Array
+                (
+                    [dashboard] => Array
+                        (
+                            [enable] => 
+                            [activations] => 
+                            [onlineDevices] => 
+                            [openClients] => 
+                        )
+
+                    [monitoring] => Array
+                        (
+                            [enable] => 
+                            [signals] => 
+                            [activations] => 
+                        )
+
+                    [clients] => Array
+                        (
+                            [enable] => 
+                            [edit] => 
+                            [activations] => Array
+                                (
+                                    [enable] => 
+                                    [edit] => 
+                                    [addResponseNotes] => 
+                                    [editResponseNotes] => 
+                                    [removeResponseNotes] => 
+                                )
+
+                        )
+
+                    [users] => Array
+                        (
+                            [enable] => 
+                            [edit] => 
+                            [editPlatform] => 
+                        )
+
+                    [reports] => Array
+                        (
+                            [enable] => 
+                        )
+
+                )
+
+        )
+
+)

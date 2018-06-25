@@ -23,7 +23,7 @@
 		$configClient = new CouchClient($couchDsn,$configDB);
 		$usersClient = new CouchClient($couchDsn,$usersDB);
 		$clientsClient = new CouchClient($couchDsn,$clientsDB);
-		$clickatellURL = "https://platform.clickatell.com/messages/http/send?apiKey=XGbb0jE3SD2rHwa4uh5OCQ%3D%3D";
+		$clickatellURL = "https://platform.clickatell.com/messages/http/send?apiKey=qyM2kcqjTjGvHL8MwnXI1Q%3D%3D";
 	}
 	//get action plans and response plans
 	{
@@ -115,7 +115,16 @@
 											$content = str_replace("\$eventName",$currentSignal -> signal -> eventName,$content);
 											if($actionPlans -> plans -> $actionPlan -> signalType == "zone info")
 											{
-												$content = str_replace("\$zone_user","Zone: " . $currentSignal -> signal -> zone_user,$content);
+												$signalZone = str_pad($currentSignal -> signal -> zone_user, 2, 0, STR_PAD_LEFT);
+												$clientZones = $client -> zones;
+												if(!is_null($clientZones -> $signalZone))
+												{
+													$content = str_replace("\$zone_user","Zone: " . $clientZones -> $signalZone -> zoneDescription ,$content);
+												}
+												else
+												{
+													$content = str_replace("\$zone_user","Zone: " . $currentSignal -> signal -> zone_user,$content);
+												}
 											}
 											elseif($actionPlans -> plans -> $actionPlan -> signalType == "user info")
 											{
@@ -186,6 +195,7 @@
 								$client -> activations -> $actionPlan -> $now -> activationID = $now;
 								$client -> activations -> $actionPlan -> $now -> isActive = true;
 								$client -> activations -> $actionPlan -> $now -> assignedSignals[] = $signalID;
+								$client -> activations -> $actionPlan -> $now -> dateTime = date('d/m/Y @ H:i:s',$now);
 								//error_reporting(E_ALL);
 								//store Client
 								{
@@ -222,7 +232,16 @@
 										$content = str_replace("\$eventName",$currentSignal -> signal -> eventName,$content);
 										if($actionPlans -> plans -> $actionPlan -> signalType == "zone info")
 										{
-											$content = str_replace("\$zone_user","Zone: " . $currentSignal -> signal -> zone_user,$content);
+											$signalZone = str_pad($currentSignal -> signal -> zone_user, 2, 0, STR_PAD_LEFT);
+											$clientZones = $client -> zones;
+											if(!is_null($clientZones -> $signalZone))
+											{
+												$content = str_replace("\$zone_user","Zone: " . $clientZones -> $signalZone -> zoneDescription ,$content);
+											}
+											else
+											{
+												$content = str_replace("\$zone_user","Zone: " . $currentSignal -> signal -> zone_user,$content);
+											}
 										}
 										elseif($actionPlans -> plans -> $actionPlan -> signalType == "user info")
 										{
@@ -327,7 +346,16 @@
 									$content = str_replace("\$eventName",$currentSignal -> signal -> eventName,$content);
 									if($actionPlans -> plans -> $actionPlan -> signalType == "zone info")
 									{
-										$content = str_replace("\$zone_user","Zone: " . $currentSignal -> signal -> zone_user,$content);
+										$signalZone = str_pad($currentSignal -> signal -> zone_user, 2, 0, STR_PAD_LEFT);
+										$clientZones = $client -> zones;
+										if(!is_null($clientZones -> $signalZone))
+										{
+											$content = str_replace("\$zone_user","Zone: " . $clientZones -> $signalZone -> zoneDescription ,$content);
+										}
+										else
+										{
+											$content = str_replace("\$zone_user","Zone: " . $currentSignal -> signal -> zone_user,$content);
+										}
 									}
 									elseif($actionPlans -> plans -> $actionPlan -> signalType == "user info")
 									{
@@ -395,6 +423,7 @@
 		}
 		else
 		{
+output("client is On Test Mode");
 			//error_reporting(E_ALL);
 			if((!$currentSignal -> convertedToActivation))
 			{

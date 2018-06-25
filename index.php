@@ -94,11 +94,502 @@
 						editUser();
 					}
 				}
+				elseif($_GET["page"] == "signals")
+				{
+					if($userSecurity -> monitoring -> signals)
+					{
+						signalsPage();
+					}
+					else
+					{
+						unauthorised();
+					}
+				}
+				elseif($_GET["page"] == "activations")
+				{
+error_reporting(E_ALL);
+					activationsPage();
+					?>
+						<script>
+							function updateActivations(retrieved)
+							{
+								//orderby priority
+								{
+									var actionPlans_ordered = {};
+									//determine list of priorities
+									{
+										for(actionPlanName in retrieved.config.actionPlans)
+										{
+											var currentActionPlan = retrieved.config.actionPlans[actionPlanName];
+											var priority = currentActionPlan.priority;
+											if(priority !== null)
+											{
+												actionPlans_ordered[priority] = {};
+											}
+										}
+									}
+									//loop through actionPlans AGAIN, and then load them to a blank array
+									{
+										for(actionPlanName in retrieved.config.actionPlans)
+										{
+											var currentActionPlan = retrieved.config.actionPlans[actionPlanName];
+											var priority = currentActionPlan.priority;
+											if(priority !== null)
+											{
+												actionPlans_ordered[priority][currentActionPlan.name] = currentActionPlan;
+											}
+										}
+									}
+								}
+								//collect client Activations
+								{
+									var activations_byPriority = {};
+									for(var clientID in retrieved.clients)
+									{	
+										var currentClient = retrieved.clients[clientID];
+										var clientActivations = currentClient.activations;
+										if(clientActivations !== undefined)
+										{
+											//loop through actionPlans_ordered
+											for(var priority in actionPlans_ordered)
+											{
+												for(var activationTypeName in actionPlans_ordered[priority])
+												{
+													if(clientActivations[activationTypeName] !== undefined)
+													{
+														for(var activationID in clientActivations[activationTypeName])
+														{
+															var currentActivation = clientActivations[activationTypeName][activationID];
+															if(currentActivation.isActive)
+															{
+																activations_byPriority[priority] = {};
+															}
+														}
+													}
+												}
+											}
+										}
+										
+									}
+									for(var clientID in retrieved.clients)
+									{	
+										var currentClient = retrieved.clients[clientID];
+										var clientActivations = currentClient.activations;
+										if(clientActivations !== undefined)
+										{
+											//loop through actionPlans_ordered
+											for(var priority in actionPlans_ordered)
+											{
+												for(var activationTypeName in actionPlans_ordered[priority])
+												{
+													if(clientActivations[activationTypeName] !== undefined)
+													{
+														for(var activationID in clientActivations[activationTypeName])
+														{
+															var currentActivation = clientActivations[activationTypeName][activationID];
+															if(currentActivation.isActive)
+															{
+																activations_byPriority[priority][activationID] = {};
+															}
+														}
+													}
+												}
+											}
+										}
+										
+									}
+									for(var clientID in retrieved.clients)
+									{	
+										var currentClient = retrieved.clients[clientID];
+										var clientActivations = currentClient.activations;
+										if(clientActivations !== undefined)
+										{
+											//loop through actionPlans_ordered
+											for(var priority in actionPlans_ordered)
+											{
+												for(var activationTypeName in actionPlans_ordered[priority])
+												{
+													if(clientActivations[activationTypeName] !== undefined)
+													{
+														for(var activationID in clientActivations[activationTypeName])
+														{
+															var currentActivation = clientActivations[activationTypeName][activationID];
+															if(currentActivation.isActive)
+															{
+																activations_byPriority[priority][activationID]['clientDetails'] = currentClient;
+																activations_byPriority[priority][activationID]['activationDetails'] = currentActivation;
+																activations_byPriority[priority][activationID]['activationType'] = activationTypeName;
+															}
+														}
+													}
+												}
+											}
+										}
+										
+									}
+								}
+								//retrieve data from sorted activations to display data
+								{
+									var activationsContent = document.getElementById('activationsContent');
+									activationsContent.innerHTML='';
+									for(var priority in activations_byPriority)
+									{
+										for(var activationID in activations_byPriority[priority])
+										{
+											var currentActivation = activations_byPriority[priority][activationID];
+											var activationName = currentActivation.activationType;
+											var clientID = currentActivation.clientDetails._id;
+											var clientName = currentActivation.clientDetails.clientName;
+											var symbol = retrieved.config.actionPlans[activationName].symbol;
+											var dateCreated = currentActivation.activationDetails.dateTime;
+											//create well
+											{
+												var activationWell = document.createElement('DIV');
+												activationWell.classList.add('activationWell');
+												activationWell.classList.add('well');
+												activationWell.setAttribute('id', activationID);
+											}
+											//create activation link
+											{
+												var activationLink = document.createElement('a');
+												activationLink.setAttribute('href',`?page=clients&clientID=${clientID}&tab=activations&activationID=${activationID}`);
+												activationLink.classList.add('activationLink');
+											}
+											//create activationDetails
+											{ 
+												var activationDetails = document.createElement('div');
+												activationDetails.classList.add('activationDetails');
+												activationDetails.innerHTML=`<h3><span>${symbol}</span> ${clientName}</h3><span>${dateCreated} - ${activationName}</span>`;
+											}
+											//create activation signals
+											{
+												var activationSignals = document.createElement('ul');
+												activationSignals.classList.add('activationSignals');
+												var assignedSignals = currentActivation.activationDetails.assignedSignals;
+												for(i=0; i<assignedSignals.length ; i++)
+												{
+													signalID = assignedSignals[i];
+													currentSignal = retrieved.signals[signalID];
+													var signalDetails = document.createElement('li');
+													var signalDate = currentSignal.dateTime;
+													var signalMessage = currentSignal.signal.eventName;
+													if(retrieved.config.actionPlans[activationName].signalType == "zone info")
+													{
+														signalMessage += ` Zone: ${currentSignal.signal.zone_user}`;
+													}
+													else if(retrieved.config.actionPlans[activationName].signalType == "user info")
+													{
+														//see if client has users
+														var currentClient = retrieved.clients[clientID];
+														clientUsers = currentClient.users;
+														if(clientUsers !== undefined)
+														{
+															userNumber = currentSignal.signal.zone_user;
+															var userFound = false;
+															for(userID in clientUsers)
+															{
+																currentUser = clientUsers[userID];
+																if(currentUser.userNumber == currentSignal.signal.zone_user)
+																{
+																	userFound = true;
+																	signalMessage += ` ${retrieved.users[userID].details.name}`;
+																}
+															}
+															if(userFound === false)
+															{
+																signalMessage += ` User: ${userNumber}`;
+															}
+														}
+														else
+														{
+															signalMessage += ` User: ${currentSignal.signal.zone_user}`;
+														}
+													}
+													signalDetails.innerText = `${signalDate} - ${signalMessage}`;
+													activationSignals.appendChild(signalDetails);
+													
+												}
+											}
+											//add all child elements
+											{
+												activationLink.appendChild(activationDetails);
+												activationLink.appendChild(activationSignals);
+												activationWell.appendChild(activationLink);
+												activationsContent.appendChild(activationWell);
+											}
+										}
+									}
+								}
+							}
+						</script>
+					<?php
+				}
 				else//No page found, Display Dashboard
 				{
 					$_GET["page"] = 'dashboard';
 					dashboard();
-					
+					?>
+						<script>
+							function updateActivationsDashboard(retrieved)
+							{
+								//orderby priority
+								{
+									var actionPlans_ordered = {};
+									//determine list of priorities
+									{
+										for(actionPlanName in retrieved.config.actionPlans)
+										{
+											var currentActionPlan = retrieved.config.actionPlans[actionPlanName];
+											var priority = currentActionPlan.priority;
+											if(priority !== null)
+											{
+												actionPlans_ordered[priority] = {};
+											}
+										}
+									}
+									//loop through actionPlans AGAIN, and then load them to a blank array
+									{
+										for(actionPlanName in retrieved.config.actionPlans)
+										{
+											var currentActionPlan = retrieved.config.actionPlans[actionPlanName];
+											var priority = currentActionPlan.priority;
+											if(priority !== null)
+											{
+												actionPlans_ordered[priority][currentActionPlan.name] = currentActionPlan;
+											}
+										}
+									}
+								}
+								//collect client Activations
+								{
+									var activations_byPriority = {};
+									for(var clientID in retrieved.clients)
+									{	
+										var currentClient = retrieved.clients[clientID];
+										var clientActivations = currentClient.activations;
+										if(clientActivations !== undefined)
+										{
+											//loop through actionPlans_ordered
+											for(var priority in actionPlans_ordered)
+											{
+												for(var activationTypeName in actionPlans_ordered[priority])
+												{
+													if(clientActivations[activationTypeName] !== undefined)
+													{
+														for(var activationID in clientActivations[activationTypeName])
+														{
+															var currentActivation = clientActivations[activationTypeName][activationID];
+															if(currentActivation.isActive)
+															{
+																activations_byPriority[priority] = {};
+															}
+														}
+													}
+												}
+											}
+										}
+										
+									}
+									for(var clientID in retrieved.clients)
+									{	
+										var currentClient = retrieved.clients[clientID];
+										var clientActivations = currentClient.activations;
+										if(clientActivations !== undefined)
+										{
+											//loop through actionPlans_ordered
+											for(var priority in actionPlans_ordered)
+											{
+												for(var activationTypeName in actionPlans_ordered[priority])
+												{
+													if(clientActivations[activationTypeName] !== undefined)
+													{
+														for(var activationID in clientActivations[activationTypeName])
+														{
+															var currentActivation = clientActivations[activationTypeName][activationID];
+															if(currentActivation.isActive)
+															{
+																activations_byPriority[priority][activationID] = {};
+															}
+														}
+													}
+												}
+											}
+										}
+										
+									}
+									for(var clientID in retrieved.clients)
+									{	
+										var currentClient = retrieved.clients[clientID];
+										var clientActivations = currentClient.activations;
+										if(clientActivations !== undefined)
+										{
+											//loop through actionPlans_ordered
+											for(var priority in actionPlans_ordered)
+											{
+												for(var activationTypeName in actionPlans_ordered[priority])
+												{
+													if(clientActivations[activationTypeName] !== undefined)
+													{
+														for(var activationID in clientActivations[activationTypeName])
+														{
+															var currentActivation = clientActivations[activationTypeName][activationID];
+															if(currentActivation.isActive)
+															{
+																activations_byPriority[priority][activationID]['clientDetails'] = currentClient;
+																activations_byPriority[priority][activationID]['activationDetails'] = currentActivation;
+																activations_byPriority[priority][activationID]['activationType'] = activationTypeName;
+															}
+														}
+													}
+												}
+											}
+										}
+										
+									}
+								}
+								//retrieve data from sorted activations to display data
+								{
+									var dashboardContent = document.getElementById('activationDashboard_content');
+									dashboardContent.innerHTML='';
+									for(var priority in activations_byPriority)
+									{
+										for(var activationID in activations_byPriority[priority])
+										{
+											var currentActivation = activations_byPriority[priority][activationID];
+											var activationName = currentActivation.activationType;
+											var clientID = currentActivation.clientDetails._id;
+											var clientName = currentActivation.clientDetails.clientName;
+											var symbol = retrieved.config.actionPlans[activationName].symbol;
+											var dateCreated = currentActivation.activationDetails.dateTime;
+											//create well
+											{
+												var activationWell = document.createElement('DIV');
+												activationWell.classList.add('activationWell');
+												activationWell.classList.add('well');
+												activationWell.setAttribute('id', activationID);
+											}
+											//create activation link
+											{
+												var activationLink = document.createElement('a');
+												activationLink.setAttribute('href',`?page=clients&clientID=${clientID}&tab=activations&activationID=${activationID}`);
+												activationLink.classList.add('activationLink');
+											}
+											//create activationDetails
+											{ 
+												var activationDetails = document.createElement('div');
+												activationDetails.classList.add('activationDetails');
+												activationDetails.innerHTML=`<h3><span>${symbol}</span> ${clientName}</h3><span>${dateCreated} - ${activationName}</span>`;
+											}
+											//create activation signals
+											{
+												var activationSignals = document.createElement('ul');
+												activationSignals.classList.add('activationSignals');
+												var assignedSignals = currentActivation.activationDetails.assignedSignals;
+												for(i=0; i<assignedSignals.length ; i++)
+												{
+													signalID = assignedSignals[i];
+													currentSignal = retrieved.signals[signalID];
+													var signalDetails = document.createElement('li');
+													var signalDate = currentSignal.dateTime;
+													var signalMessage = currentSignal.signal.eventName;
+													if(retrieved.config.actionPlans[activationName].signalType == "zone info")
+													{
+														signalMessage += ` Zone: ${currentSignal.signal.zone_user}`;
+													}
+													else if(retrieved.config.actionPlans[activationName].signalType == "user info")
+													{
+														//see if client has users
+														var currentClient = retrieved.clients[clientID];
+														clientUsers = currentClient.users;
+														if(clientUsers !== undefined)
+														{
+															userNumber = currentSignal.signal.zone_user;
+															var userFound = false;
+															for(userID in clientUsers)
+															{
+																currentUser = clientUsers[userID];
+																if(currentUser.userNumber == currentSignal.signal.zone_user)
+																{
+																	userFound = true;
+																	signalMessage += ` ${retrieved.users[userID].details.name}`;
+																}
+															}
+															if(userFound === false)
+															{
+																signalMessage += ` User: ${userNumber}`;
+															}
+														}
+														else
+														{
+															signalMessage += ` User: ${currentSignal.signal.zone_user}`;
+														}
+													}
+													signalDetails.innerText = `${signalDate} - ${signalMessage}`;
+													activationSignals.appendChild(signalDetails);
+													
+												}
+											}
+											//add all child elements
+											{
+												activationLink.appendChild(activationDetails);
+												activationLink.appendChild(activationSignals);
+												activationWell.appendChild(activationLink);
+												dashboardContent.appendChild(activationWell);
+											}
+										}
+									}
+								}
+							}
+							function updateOpenClientsDashboard(retrieved)
+							{
+								var dashboard = document.getElementById('openClientsDashboard_content');
+								dashboard.innerHTML='';
+								var openCount = 0;
+								var closedCount = 0;
+								var openStores = document.createElement('div');
+								openStores.classList.add('well');
+								openStores.classList.add('openClients_open');
+								var openStoreCounter = document.createElement('h2');
+								var closedStores = document.createElement('div');
+								closedStores.classList.add('well');
+								closedStores.classList.add('openClients_closed');
+								var closedStoreCounter = document.createElement('h2');
+								var openList = document.createElement('ul');
+								openList.classList.add('openClients_list');
+								var closedList = document.createElement('ul');
+								closedList.classList.add('openClients_list');
+								for(var clientID in retrieved.clients)
+								{
+									var currentClient = retrieved.clients[clientID];
+									var clientName = currentClient.clientName;
+									if(currentClient.currentStatus == "open")
+									{
+										status = 'open';
+										openCount += 1;
+										var clientDetails = document.createElement('li');
+										clientDetails.innerHTML = `<a href="?page=clients&clientID=${clientID}">${clientName}</a>`;
+										openList.appendChild(clientDetails);
+									}
+									else
+									{
+										status = "closed";
+										closedCount += 1;
+										var clientDetails = document.createElement('li');
+										clientDetails.innerHTML = `<a href="?page=clients&clientID=${clientID}">${clientName}</a>`;
+										closedList.appendChild(clientDetails);
+									}
+								}
+								closedStoreCounter.innerHTML=`&#x1F512 Closed Stores (${closedCount})`;
+								closedStores.appendChild(closedStoreCounter);
+								closedStores.appendChild(closedList);
+								dashboard.appendChild(closedStores);
+								openStoreCounter.innerHTML=`&#x1F513 Open Stores (${openCount})`;
+								openStores.appendChild(openStoreCounter);
+								openStores.appendChild(openList);
+								dashboard.appendChild(openStores);
+							}
+						</script>
+					<?php
 				}
 				?>
 					<script>
@@ -114,18 +605,36 @@
 								dataType:"JSON",
 								cache: false,
 								success:function(msg){
+//console.log(msg);
 									<?php
 										if(($userSecurity -> monitoring -> activations) && ($userSecurity -> monitoring -> enable))
 										{
 											echo "updateAlertBar(msg.retrieved);";
 										}
-										if(($userSecurity -> dashboard -> activations) && ($userSecurity -> dashboard -> enable) && ($_GET["page"] == "dashboard"))
+										//Dashboard Functions
 										{
-											echo "updateActivationsDashboard(msg.retrieved);";
+											if(($userSecurity -> dashboard -> activations) && ($userSecurity -> dashboard -> enable) && ($_GET["page"] == "dashboard"))
+											{
+												echo "updateActivationsDashboard(msg.retrieved);";
+											}
+											if(($userSecurity -> dashboard -> openClients) && ($userSecurity -> dashboard -> enable) && ($_GET["page"] == "dashboard"))
+											{
+												echo "updateOpenClientsDashboard(msg.retrieved);";
+											}
 										}
-										if(($userSecurity -> dashboard -> openClients) && ($userSecurity -> dashboard -> enable) && ($_GET["page"] == "dashboard"))
+										//signals functions
 										{
-											echo "updateOpenClientsDashboard(msg.retrieved);";
+											if(($userSecurity -> monitoring -> signals) && ($userSecurity -> monitoring -> enable) && ($_GET["page"] == "signals"))
+											{
+												echo "updateSignals(msg.retrieved);";
+											}
+										}
+										//activations function
+										{
+											if(($userSecurity -> monitoring -> activations) && ($userSecurity -> monitoring -> enable) && ($_GET["page"] == "activations"))
+											{
+												echo "updateActivations(msg.retrieved);";
+											}
 										}
 									?>
 									retrieveData();
@@ -206,7 +715,7 @@
 							{
 								for(var priority in actionPlans_ordered)
 								{
-									actionPlans_byPriority = actionPlans_ordered[priority];
+									var actionPlans_byPriority = actionPlans_ordered[priority];
 									for(var actionPlanName in actionPlans_byPriority)
 									{
 										if(count[actionPlanName] > 0)
@@ -219,293 +728,6 @@
 									}
 								}
 							}
-						}
-						function updateActivationsDashboard(retrieved)
-						{
-							//orderby priority
-							{
-								var actionPlans_ordered = {};
-								//determine list of priorities
-								{
-									for(actionPlanName in retrieved.config.actionPlans)
-									{
-										var currentActionPlan = retrieved.config.actionPlans[actionPlanName];
-										var priority = currentActionPlan.priority;
-										if(priority !== null)
-										{
-											actionPlans_ordered[priority] = {};
-										}
-									}
-								}
-								//loop through actionPlans AGAIN, and then load them to a blank array
-								{
-									for(actionPlanName in retrieved.config.actionPlans)
-									{
-										var currentActionPlan = retrieved.config.actionPlans[actionPlanName];
-										var priority = currentActionPlan.priority;
-										if(priority !== null)
-										{
-											actionPlans_ordered[priority][currentActionPlan.name] = currentActionPlan;
-										}
-									}
-								}
-							}
-							//collect client Activations
-							{
-								var activations_byPriority = {};
-								for(var clientID in retrieved.clients)
-								{	
-									var currentClient = retrieved.clients[clientID];
-									var clientActivations = currentClient.activations;
-									if(clientActivations !== undefined)
-									{
-										//loop through actionPlans_ordered
-										for(var priority in actionPlans_ordered)
-										{
-											for(var activationTypeName in actionPlans_ordered[priority])
-											{
-												if(clientActivations[activationTypeName] !== undefined)
-												{
-													for(var activationID in clientActivations[activationTypeName])
-													{
-														var currentActivation = clientActivations[activationTypeName][activationID];
-														if(currentActivation.isActive)
-														{
-															activations_byPriority[priority] = {};
-														}
-													}
-												}
-											}
-										}
-									}
-									
-								}
-								for(var clientID in retrieved.clients)
-								{	
-									var currentClient = retrieved.clients[clientID];
-									var clientActivations = currentClient.activations;
-									if(clientActivations !== undefined)
-									{
-										//loop through actionPlans_ordered
-										for(var priority in actionPlans_ordered)
-										{
-											for(var activationTypeName in actionPlans_ordered[priority])
-											{
-												if(clientActivations[activationTypeName] !== undefined)
-												{
-													for(var activationID in clientActivations[activationTypeName])
-													{
-														var currentActivation = clientActivations[activationTypeName][activationID];
-														if(currentActivation.isActive)
-														{
-															activations_byPriority[priority][activationID] = {};
-														}
-													}
-												}
-											}
-										}
-									}
-									
-								}
-								for(var clientID in retrieved.clients)
-								{	
-									var currentClient = retrieved.clients[clientID];
-									var clientActivations = currentClient.activations;
-									if(clientActivations !== undefined)
-									{
-										//loop through actionPlans_ordered
-										for(var priority in actionPlans_ordered)
-										{
-											for(var activationTypeName in actionPlans_ordered[priority])
-											{
-												if(clientActivations[activationTypeName] !== undefined)
-												{
-													for(var activationID in clientActivations[activationTypeName])
-													{
-														var currentActivation = clientActivations[activationTypeName][activationID];
-														if(currentActivation.isActive)
-														{
-															activations_byPriority[priority][activationID]['clientDetails'] = currentClient;
-															activations_byPriority[priority][activationID]['activationDetails'] = currentActivation;
-															activations_byPriority[priority][activationID]['activationType'] = activationTypeName;
-														}
-													}
-												}
-											}
-										}
-									}
-									
-								}
-							}
-							//retrieve data from sorted activations to display data
-							{
-								var dashboardContent = document.getElementById('activationDashboard_content');
-								dashboardContent.innerHTML='';
-								for(var priority in activations_byPriority)
-								{
-									for(var activationID in activations_byPriority[priority])
-									{
-										var currentActivation = activations_byPriority[priority][activationID];
-										var activationName = currentActivation.activationType;
-										var clientID = currentActivation.clientDetails._id;
-										var clientName = currentActivation.clientDetails.clientName;
-										var symbol = retrieved.config.actionPlans[activationName].symbol;
-										var dateCreated = currentActivation.activationDetails.dateTime;
-										//create well
-										{
-											var activationWell = document.createElement('DIV');
-											activationWell.classList.add('activationWell');
-											activationWell.classList.add('well');
-											activationWell.setAttribute('id', activationID);
-										}
-										//create activation link
-										{
-											var activationLink = document.createElement('a');
-											activationLink.setAttribute('href',`?page=clients&clientID=${clientID}&tab=activations&activationID=${activationID}`);
-											activationLink.classList.add('activationLink');
-										}
-										//create activationDetails
-										{ 
-											var activationDetails = document.createElement('div');
-											activationDetails.classList.add('activationDetails');
-											activationDetails.innerHTML=`<h3><span>${symbol}</span> ${clientName}</h3><span>${dateCreated} - ${activationName}</span>`;
-										}
-										//create activation signals
-										{
-											var activationSignals = document.createElement('ul');
-											activationSignals.classList.add('activationSignals');
-											var assignedSignals = currentActivation.activationDetails.assignedSignals;
-											for(i=0; i<assignedSignals.length ; i++)
-											{
-												signalID = assignedSignals[i];
-												currentSignal = retrieved.signals[signalID];
-												var signalDetails = document.createElement('li');
-												var signalDate = currentSignal.dateTime;
-												var signalMessage = currentSignal.signal.eventName;
-												if(retrieved.config.actionPlans[activationName].signalType == "zone info")
-												{
-													signalMessage += ` Zone: ${currentSignal.signal.zone_user}`;
-												}
-												else if(retrieved.config.actionPlans[activationName].signalType == "user info")
-												{
-													//see if client has users
-													var currentClient = retrieved.clients[clientID];
-													clientUsers = currentClient.users;
-													if(clientUsers !== undefined)
-													{
-														userNumber = currentSignal.signal.zone_user;
-														var userFound = false;
-														for(userID in clientUsers)
-														{
-															currentUser = clientUsers[userID];
-															if(currentUser.userNumber == currentSignal.signal.zone_user)
-															{
-																userFound = true;
-																signalMessage += ` ${retrieved.users[userID].details.name}`;
-															}
-														}
-														if(userFound === false)
-														{
-															signalMessage += ` User: ${userNumber}`;
-														}
-													}
-													else
-													{
-														signalMessage += ` User: ${currentSignal.signal.zone_user}`;
-													}
-												}
-												signalDetails.innerText = `${signalDate} - ${signalMessage}`;
-												activationSignals.appendChild(signalDetails);
-												
-											}
-										}
-										//add all child elements
-										{
-											activationLink.appendChild(activationDetails);
-											activationLink.appendChild(activationSignals);
-											activationWell.appendChild(activationLink);
-											dashboardContent.appendChild(activationWell);
-										}
-									}
-								}
-							}
-						}
-/*LATER DEVELOPMENT						
-						function updateOnlineDevicesDashboard(retrieved)
-						{
-							var onlineDevices = 0;
-							var offlineDevices = 0;
-							for(var clientID in retrieved.clients)
-							{
-								var currentClient = retrieved.clients[clientID];
-								if(currentClient.devices !== undefined)
-								{
-									for(i=0; i<currentClient.devices.length;i++)
-									{
-										var currentDevice = currentClient.devices[i];
-										$.ajax({
-											url:"retrieve.php",
-											async:true,
-											type:"post",
-											data:{token:"<?php echo $_SESSION["signedInUser"]?>",require:"ping",address:currentDevice.deviceAddress},
-											dataType:"JSON",
-											cache: false,
-											success:function(msg){
-//												console.log(msg);
-											}
-										});
-									}
-								}
-							}
-						}
-*/
-						function updateOpenClientsDashboard(retrieved)
-						{
-							var dashboard = document.getElementById('openClientsDashboard_content');
-							dashboard.innerHTML='';
-							var openCount = 0;
-							var closedCount = 0;
-							var openStores = document.createElement('div');
-							openStores.classList.add('well');
-							openStores.classList.add('openClients_open');
-							var openStoreCounter = document.createElement('h2');
-							var closedStores = document.createElement('div');
-							closedStores.classList.add('well');
-							closedStores.classList.add('openClients_closed');
-							var closedStoreCounter = document.createElement('h2');
-							var openList = document.createElement('ul');
-							openList.classList.add('openClients_list');
-							var closedList = document.createElement('ul');
-							closedList.classList.add('openClients_list');
-							for(var clientID in retrieved.clients)
-							{
-								var currentClient = retrieved.clients[clientID];
-								var clientName = currentClient.clientName;
-								if(currentClient.currentStatus == "open")
-								{
-									status = 'open';
-									openCount += 1;
-									var clientDetails = document.createElement('li');
-									clientDetails.innerHTML = `<a href="?page=clients&clientID=${clientID}">${clientName}</a>`;
-									openList.appendChild(clientDetails);
-								}
-								else
-								{
-									status = "closed";
-									closedCount += 1;
-									var clientDetails = document.createElement('li');
-									clientDetails.innerHTML = `<a href="?page=clients&clientID=${clientID}">${clientName}</a>`;
-									closedList.appendChild(clientDetails);
-								}
-							}
-							closedStoreCounter.innerHTML=`&#x1F512 Closed Stores (${closedCount})`;
-							closedStores.appendChild(closedStoreCounter);
-							closedStores.appendChild(closedList);
-							dashboard.appendChild(closedStores);
-							openStoreCounter.innerHTML=`&#x1F513 Open Stores (${openCount})`;
-							openStores.appendChild(openStoreCounter);
-							openStores.appendChild(openList);
-							dashboard.appendChild(openStores);
 						}
 						function unixToTime(unix)
 						{
@@ -1015,7 +1237,7 @@
 				}
 				catch (Exception $e)
 				{
-					echo "<script>window.alert('",  $e->getMessage(), "'); window.location.href='?page=clients';</script>";
+					echo "<script>window.alert('".  $e->getMessage(). "'); window.location.href='?page=clients';</script>";
 				}
 				//test if there are any active activations
 				{
@@ -1046,7 +1268,8 @@
 								?>
 								<li <?php if(!$activeActivationsFound){echo "class=\"active\"";}?>><a data-toggle="pill" href="#contact">Contact Details</a></li>
 								<li><a data-toggle="pill" href="#users">Users</a></li>
-								<li><a data-toggle="pill" href="#menu3">Menu 3</a></li>
+								<li><a data-toggle="pill" href="#zones">Zones</a></li>
+								<li><a data-toggle="pill" href="#tests">Tests</a></li>
 							</ul>
 						</div>
 						<div class="col-sm-9">
@@ -1081,10 +1304,27 @@
 													<div class="col-sm-3">
 														<ul class="nav nav-pills nav-stacked" id="activationList" ></ul>
 													</div>
-													<div id="activationDetails" class="col-sm-9"></div>
+													<div id="activationDetails" class="col-sm-9">
+														<div class="modal fade" id="passwordVerificationModal" role="dialog">
+															<div class="modal-dialog modal-sm">
+																<div class="modal-content">
+																	<div class="modal-header">
+																		<h4 class="modal-title">Please Verify OK Password:</h4>
+																	</div>
+																	<div class="modal-body">
+																		<label for="passwordVerificationInput">Password:</label>
+																		<input onclick="testPasswordVerification(this);" onKeyup="testPasswordVerification(this);" spellcheck="true" type="text" id="passwordVerificationInput" class="form-control">
+																		<input type="hidden" id="passwordVerification_responseNoteID">
+																		<div id="passwordVerificationNotice"></div>
+																		<span style="text-align:center"><button class="btn btn-danger" onclick="contactOffSite();">Contact not on site</button></span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
 													<script>
-														completedActivations = Array();
-														completedActivationCount = 0;
+														var completedActivations = Array();
+														var completedActivationCount = 0;
 														clientUpdater("<?php echo ($_GET["clientID"]); ?>");
 														function clientUpdater(clientID)
 														{
@@ -1097,6 +1337,7 @@
 																cache: false,
 																success:function(msg){
 																	retrieved = msg.retrieved;
+																	clientPasswords = msg.retrieved.client.passwords;
 																	updateClientActivations(msg.retrieved);
 																	updateActivationSignals(msg.retrieved);
 																	clientUpdater(clientID);
@@ -1225,7 +1466,7 @@
 																								currentContact.innerHTML = `<h4 style="text-align:center">${currentUser.details.name}</h4>`;
 																								currentContact.innerHTML += `+${userMobile.substr(0,2)} (0)${userMobile.substr(2,2)} ${userMobile.substr(4,3)} ${userMobile.substr(7,4)}<br>`;
 																								currentContact.innerHTML += `User Type: ${currentUser.details.userType}<br>`;
-																								currentContact.innerHTML += `<button onclick="addResponseNote(${activationID},'Contacted ${currentUser.details.name}');" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
+																								currentContact.innerHTML += `<button onclick="verifyPassword(${activationID},addResponseNote(${activationID},'Contacted ${currentUser.details.name}'));" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
 																								contactsColumn.appendChild(currentContact);
 																							}
 																						}
@@ -1256,7 +1497,7 @@
 																									currentContact.innerHTML = `<h4 style="text-align:center">${currentUser.details.name}</h4>`;
 																									currentContact.innerHTML += `+${userMobile.substr(0,2)} (0)${userMobile.substr(2,2)} ${userMobile.substr(4,3)} ${userMobile.substr(7,4)}<br>`;
 																									currentContact.innerHTML += `User Type: ${currentUser.details.userType}<br>`;
-																									currentContact.innerHTML += `<button onclick="addResponseNote(${activationID},'Contacted ${currentUser.details.name}');" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
+																									currentContact.innerHTML += `<button onclick="verifyPassword(${activationID},addResponseNote(${activationID},'Contacted ${currentUser.details.name}'));" type="button" class="btn btn-success">Contacted</button><button onclick="addResponseNote(${activationID},'Unable to contact ${currentUser.details.name}');" type="button" class="btn btn-danger">Contact Failed</button>`; 
 																									contactsColumn.appendChild(currentContact);
 																								}
 																							}
@@ -1317,6 +1558,7 @@
 															responseNotesColumn.insertBefore(newResponseNote,buttons[1]);
 															newResponseNote.innerHTML = `<h4>${unixToTime(now)}:<br>${user}</h4>`;
 															newResponseNote.innerHTML += `<textarea system_responseBy="<?php echo $_SESSION["signedInUser"]; ?>" class="form-control" name="responseContent_${now}" id="responseContent_${now}">${content}</textArea>`;
+															return now;
 														}
 														function updateClient(what)
 														{
@@ -1374,15 +1616,121 @@
 															completedActivationCount += 1;
 															window.location.href = window.location.search;
 														}
+														function verifyPassword(activationID,responseNoteID)
+														{
+															var modal = document.getElementById('passwordVerificationModal');
+															modal.style.display="block";
+															modal.classList.add('in');
+															document.getElementById('passwordVerification_responseNoteID').value = responseNoteID;
+														}
+														function testPasswordVerification(input)
+														{
+															var inputValue = input.value.toLowerCase().replace(/ /g,'');
+															var notice = document.getElementById('passwordVerificationNotice');
+															var modal = document.getElementById('passwordVerificationModal');
+															var responseNoteID = document.getElementById('passwordVerification_responseNoteID').value;
+															if(clientPasswords.OKPassword.toLowerCase().replace(/ /g,'') == inputValue)
+															{
+																notice.innerHTML = "";
+																notice.classList.remove('alert-danger');
+																notice.classList.remove('alert');
+																modal.style.display="none";
+																modal.classList.remove('in');
+																document.getElementById(`responseContent_${responseNoteID}`).innerHTML += "\r\n\r\nOK Password Provided";
+																window.alert('Contact has provided the OK Password, There is no need to dispatch Armed Response');
+																input.value="";
+																
+															}
+															else if(clientPasswords.emergencyPassword.toLowerCase().replace(/ /g,'') == inputValue)
+															{
+																notice.innerHTML = "";
+																notice.classList.remove('alert-danger');
+																notice.classList.remove('alert');
+																modal.style.display="none";
+																modal.classList.remove('in');
+																document.getElementById(`responseContent_${responseNoteID}`).innerHTML += "\r\n\r\nEmergency Password Provided";
+																window.alert('Contact has provided the Emergency Password, Please dispatch Armed Response');
+																input.value="";
+															}
+															else
+															{
+																notice.classList.remove('alert-danger');
+																notice.classList.remove('alert');
+																notice.classList.add('alert-danger');
+																notice.classList.add('alert');
+																notice.innerHTML = `<strong>WARNING:</strong> The password you have entered does not match any password in the system.<br>Please ensure that the word is spelled correctly or ask the contact for the correct password`;
+															}
+														}
+														function contactOffSite(input)
+														{
+															var modal = document.getElementById('passwordVerificationModal');
+															var responseNoteID = document.getElementById('passwordVerification_responseNoteID').value;
+															document.getElementById(`responseContent_${responseNoteID}`).innerHTML += "\r\n\r\nContact not on site";
+															modal.style.display="none";
+															modal.classList.remove('in');
+														}
 													</script>
 												</div>
 											</div>
 										<?php
 									}
 								?>
-								<div id="contact" class="tab-pane fade <?php if(!$activeActivationsFound){echo "active in";}?>">
+								<div id="contact" class="tab-pane fade <?php if(!$activeActivationsFound){echo "active in";}?>" onclick="updateClientContact();" onkeyup="updateClientContact();">
 									<h3>Contact Details</h3>
-									<p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+									<div class="container-fluid">
+										<div class="col-sm-6">
+											<label for="clientName">Client Name:</label>
+											<input type="text" id="clientName" class="form-control" value="<?php echo $client -> clientName; ?>">
+											<label for="clientAddress">Client Address:</label>
+											<div id="clientAddress">
+												Line 1:<input type="text" id="clientAddress_line1" class="form-control" value="<?php echo $client -> address -> line1; ?>">
+												Line 2:<input type="text" id="clientAddress_line2" class="form-control" value="<?php echo $client -> address -> line2; ?>">
+												Post Code:<input type="text" id="clientAddress_postCode" class="form-control" value="<?php echo $client -> address -> postCode; ?>">
+											</div>
+										</div>
+										<div class="col-sm-6">
+											<?php
+												if(!$activeActivationsFound)
+												{
+													?>
+														<div class="well" id="clientPasswords" title="Pause momentarily after typing the password to enable spellcheck to test the spelling.">
+												<h4>Client Passwords</h4>
+												<label for="OKPassword">OK Password:</label>
+												<input spellcheck="true" type="text" id="OKPassword" class="form-control" value="<?php echo $client -> passwords -> OKPassword; ?>">
+												<label for="emergencyPassword">Emergency Password:</label>
+												<input spellcheck="true" type="text" id="emergencyPassword" class="form-control" value="<?php echo $client -> passwords -> emergencyPassword; ?>">
+											</div>
+													<?php
+												}
+											?>
+										</div>
+									</div>
+									<script>
+										function updateClientContact()
+										{
+											var clientData = {};
+											clientData.clientID = "<?php echo $_GET["clientID"]; ?>";
+											clientData.contact = {};
+											clientData.contact.clientName = document.getElementById('clientName').value;
+											clientData.contact.address = {};
+											clientData.contact.address.line1 = document.getElementById('clientAddress_line1').value;
+											clientData.contact.address.line2 = document.getElementById('clientAddress_line2').value;
+											clientData.contact.address.postCode = document.getElementById('clientAddress_postCode').value;
+											clientData.contact.passwords = {};
+											clientData.contact.passwords.OKPassword = document.getElementById('OKPassword').value;
+											clientData.contact.passwords.emergencyPassword = document.getElementById('emergencyPassword').value;
+											$.ajax({
+												url:"update.php",
+												async:true,
+												type:"post",
+												data:{token:"<?php echo $_SESSION["signedInUser"]?>",update:"client",what:"contact",data:clientData},
+												dataType:"JSON",
+												cache: false,
+												success:function(msg){
+												}
+											});
+										}
+									</script>
 								</div>
 								<div id="users" class="tab-pane fade" onclick="updateClientUsers();" onkeyup="updateClientUsers();">
 									<h3>Users</h3>
@@ -1412,7 +1760,6 @@
 														</div>
 													<?php
 												}
-error_reporting(E_ALL);
 											?>
 										</div>
 										<div id="availableUsers" class="col-sm-6" title="Double-click a user to assign">
@@ -1484,6 +1831,119 @@ error_reporting(E_ALL);
 												dataType:"JSON",
 												cache: false,
 												success:function(msg){
+												}
+											});
+										}
+									</script>
+								</div>
+								<div id="zones" class="tab-pane fade" onclick="updateClientZones();" onkeyup="updateClientZones();">
+									<h3>Zones</h3>
+									<div class="container-fluid">
+										<table id="zonesTable" class="table table-bordered table-striped">
+											<thead>
+												<th>Zone Number</th>
+												<th>Zone Description</th>
+												<th>Assigned Cameras</th>
+												<th>Remove?</th>
+											</thead>
+											<tbody id="zonesTableContent">
+												<?php
+													foreach($client -> zones as $currentZone)
+													{
+														$zoneNumber = $currentZone -> zoneNumber;
+														$zoneDescription = $currentZone -> zoneDescription;
+														$assignedCameras = $currentZone -> assignedCameras;
+														?>
+															<tr title="Click a cell to edit">
+																<td><input min="1" step="1" class="form-control" type="number" value="<?php echo $zoneNumber; ?>"></td>
+																<td contenteditable="true"><?php echo $zoneDescription; ?></td>
+																<td contenteditable="true"><?php echo $assignedCameras; ?></td>
+																<td onclick="deleteRow(this);" style="text-align:center;color:red;font-size:2em;"><span class="glyphicon glyphicon-remove"></span></td>
+															</tr>
+														<?php
+													}
+												?>
+											</tbody>
+										</table>
+										<button class="btn btn-success" onclick="addZone();">Add Zone</button>
+										<script>
+											function addZone()
+											{
+												var row = document.createElement('tr');
+												row.innerHTML=`<td><input min="1" step="1" class="form-control" type="number"></td><td contenteditable="true"></td><td contenteditable="true"></td><td onclick="deleteRow(this);" style="text-align:center;color:red;font-size:2em;"><span class="glyphicon glyphicon-remove"></span></td>`;
+												document.getElementById('zonesTableContent').appendChild(row);
+											}
+											function deleteRow(close)
+											{
+												var row = close.parentElement;
+												row.parentElement.removeChild(row);
+											}
+											function updateClientZones()
+											{
+												var clientData = {};
+												clientData.clientID = "<?php echo $_GET["clientID"]; ?>";
+												clientData.zones = {};
+												var zoneRows = document.getElementById('zonesTableContent').getElementsByTagName('tr');
+												for(var i = 0; i < zoneRows.length; i++)
+												{
+													var currentRow = zoneRows[i];
+													var zoneNumber = currentRow.getElementsByTagName('td')[0].getElementsByTagName('input')[0].value;
+													clientData.zones[zoneNumber] = {};
+													clientData.zones[zoneNumber].zoneNumber = zoneNumber;
+													clientData.zones[zoneNumber].zoneDescription = currentRow.getElementsByTagName('td')[1].innerText;
+													clientData.zones[zoneNumber].assignedCameras = currentRow.getElementsByTagName('td')[2].innerText;
+												}
+												$.ajax({
+													url:"update.php",
+													async:true,
+													type:"post",
+													data:{token:"<?php echo $_SESSION["signedInUser"]?>",update:"client",what:"zones",data:clientData},
+													dataType:"JSON",
+													cache: false,
+													success:function(msg){
+													}
+												});
+											}
+										</script>
+									</div>
+								</div>
+								<div id="tests" class="tab-pane fade">
+									<h3>Tests</h3>
+									<div class="container-fluid">
+										<label for="testModeActive">Test Mode Enabled:</label>
+										<input onclick="testModeToggle(this);" type="checkbox" id="testModeActive" class="form-control" <?php if($client -> testModeActive){echo "checked";}?>><br>
+										<div id="testModeNotification">
+											
+										</div>
+									</div>
+									<script>
+										function testModeToggle(element)
+										{
+											var clientData = {};
+											clientData.clientID = "<?php echo $_GET["clientID"]; ?>";
+											clientData.testModeActive = element.checked;
+											$.ajax({
+												url:"update.php",
+												async:false,
+												type:"post",
+												data:{token:"<?php echo $_SESSION["signedInUser"]?>",update:"client",what:"testMode",data:clientData},
+												dataType:"JSON",
+												cache: false,
+												success:function(msg){
+													var notification = document.createElement('div');
+													notification.classList.add('alert');
+													notification.classList.add('alert-success');
+													if(msg.result == "enabled")
+													{
+														notification.innerHTML = `<strong>Test Mode Enabled:</strong> Test Mode has been successfully enabled`;
+													}
+													else
+													{
+														notification.innerHTML = `<strong>Test Mode Disabled:</strong> Test Mode has been successfully disabled`;
+													}
+													var notificationContainer = document.getElementById('testModeNotification');
+													notificationContainer.appendChild(notification);
+													setTimeout(function(){notificationContainer.removeChild(notification);window.location.href=window.location.href;},3000);
 												}
 											});
 										}
@@ -1729,8 +2189,8 @@ error_reporting(E_ALL);
 															</div>
 															<div id="security_monitoring" class="tab-pane fade" onclick="testMonitoringEnable();">
 																<h3>Monitoring</h3>
-																<span>(Future Development) Enable: <input disabled type="checkbox" name="monitoring_enable" id ="monitoring_enable" <?php if($user -> platform ->security -> monitoring -> enable){ echo "checked";} ?>></span></br>
-																<span>(Future Development) Signals: <input disabled type="checkbox" name="monitoring_signals" id ="monitoring_signals" <?php if($user -> platform ->security -> monitoring -> signals){ echo "checked";} ?>></span></br>
+																<span>Enable: <input type="checkbox" name="monitoring_enable" id ="monitoring_enable" <?php if($user -> platform ->security -> monitoring -> enable){ echo "checked";} ?>></span></br>
+																<span>Signals: <input type="checkbox" name="monitoring_signals" id ="monitoring_signals" <?php if($user -> platform ->security -> monitoring -> signals){ echo "checked";} ?>></span></br>
 																<span>(Future Development) Activations: <input disabled type="checkbox" name="monitoring_activations" id ="monitoring_activations" <?php if($user -> platform ->security -> monitoring -> activations){ echo "checked";} ?>></span></br>
 																<script>
 																	function testMonitoringEnable()
@@ -1846,11 +2306,8 @@ error_reporting(E_ALL);
 																ok: 31557600 // 1 year
 															},
 															outputTime: function (time, input) {
-																//console.log(time, input);
-																//document.getElementById("passwordStrength").innerHTML = `A computer could crack your password in ${time}`;
 															},
 															outputChecks: function (checks, input) {
-																//console.log(checks, input);
 																document.getElementById("passwordStrength").innerHTML = "";
 																for(i=0;i<checks.length;i++)
 																{
@@ -1952,7 +2409,6 @@ error_reporting(E_ALL);
 										dataType:"JSON",
 										cache: false,
 										success:function(msg){
-											console.log(msg);
 										}
 									});
 								}
@@ -1966,6 +2422,66 @@ error_reporting(E_ALL);
 			{
 				unauthorised();
 			}
+		}
+		function signalsPage()
+		{
+			?>
+				<div class="container-fluid">
+					<h1>Signals</h1>
+					<div class="container-fluid" id="signalsBuffer">
+						
+					</div>
+					<script>
+						function updateSignals(retrieved)
+						{
+							var signalsBuffer = document.getElementById('signalsBuffer');
+							var signals_sorted = Array();
+							var i = 0;
+							for(var signalID in retrieved.signals)
+							{
+								signals_sorted[i] = signalID;
+								i += 1;
+							}
+							signals_sorted.sort();
+							for(var i=0;i<signals_sorted.length;i++)
+							{
+								
+								signalID=signals_sorted[i];
+								var currentSignal = retrieved.signals[signalID];
+								var dateTime = currentSignal.dateTime;
+								var rawData = currentSignal.rawData;
+								var clientID = currentSignal.signal.clientID;
+								var eventName = currentSignal.signal.eventName
+								var fromIP = currentSignal.signal.fromIP;
+								var zone_user = currentSignal.signal.zone_user;
+								var eventType = currentSignal.signal.eventType;
+								var eventQualifier = currentSignal.signal.qualifier;
+								var clientName = retrieved.clients[clientID].clientName;
+								if(document.getElementById(`signal_${signalID}`) == null)
+								{
+									var signalWell = document.createElement('div');
+									signalWell.setAttribute('id',`signal_${signalID}`);
+									signalWell.classList.add('well');
+									signalWell.classList.add('signalMonitor-signal');
+									signalWell.innerHTML = `<h4 style="text-align:center;">${dateTime} - ${clientName}</h4>`;
+									signalWell.innerHTML += `<div class="containerFluid signalMonitor-signalDetails">
+									<table class="table"><tbody><tr><td><strong><td><strong>Event:</strong> ${eventName}</td><td><strong>From IP:</strong> ${fromIP}</td><td><strong>raw:</strong> ${rawData}</td></tr><tr><td><strong><td><strong>Event type:</strong> ${eventType}</td><td><strong>Zone / User: </strong> ${zone_user}</td><td><strong>Qualifier:</strong> ${eventQualifier}</td></tr></tbody></table></div>`;
+									document.getElementById('signalsBuffer').prepend(signalWell);
+								}
+							}
+						}
+					</script>
+				</div>
+			<?php
+		}
+		function activationsPage()
+		{
+			?>
+				<div class="container-fluid">
+					<h1>Activations</h1>
+					<div id="activationsContent"></div>
+				</div>
+			<?php
 		}
 	}
 	//functions
